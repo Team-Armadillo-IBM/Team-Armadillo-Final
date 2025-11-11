@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Any, Dict
 
 import pandas as pd
 import requests
 
 
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_DATA_PATH = BASE_DIR.parent / "data" / "bank_policy.csv"
 IBM_API_KEY = os.getenv("IBM_API_KEY")
 
 
@@ -26,10 +29,12 @@ def get_iam_token(api_key: str) -> str:
     return payload["access_token"]
 
 
-def load_sample_data(path: str = "../data/bank_policy.csv") -> pd.DataFrame:
+def load_sample_data(path: str | None = None) -> pd.DataFrame:
     """Load the demo CSV file if it exists, otherwise create a mock dataframe."""
-    if os.path.exists(path):
-        df = pd.read_csv(path)
+    resolved_path = Path(path) if path is not None else DEFAULT_DATA_PATH
+
+    if resolved_path.exists():
+        df = pd.read_csv(resolved_path)
         print(f"✅ Bank policy dataset loaded: {df.shape}")
         return df
 

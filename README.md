@@ -1,4 +1,4 @@
-# Team Armadillo — Enterprise Ready AI
+# Team Armadillo Enterprise Ready AI
 **IBM AI Experiential Learning Lab 2025**
 
 This repository contains the final submission materials for the *Enterprise-Ready AI* project built entirely within IBM watsonx.ai. The solution demonstrates programmatic access to Granite foundation models, risk evaluation logic, and compliance logging for governance.

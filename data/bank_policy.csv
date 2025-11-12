@@ -1,4 +1,0 @@
-policy_id,product,region,exposure,risk_rating,last_reviewed
-P-1001,Small Business Loan,North,250000,0.32,2024-03-12
-P-1002,Mortgage,West,450000,0.58,2024-02-27
-P-1003,Personal Credit Line,South,90000,0.45,2024-04-08

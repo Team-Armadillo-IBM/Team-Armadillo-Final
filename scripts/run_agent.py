@@ -2,89 +2,20 @@
 from __future__ import annotations
 
 import argparse
-import base64
-import binascii
 import json
 import os
-from pathlib import Path
 from typing import Any, Optional
-from uuid import UUID
 
 from langchain_core.messages import AIMessage, HumanMessage
 
 from agent_lab import (
     AgentContext,
-    CustomToolConfig,
     RagToolConfig,
     Workspace,
     build_agent,
     get_bearer_token,
     load_credentials,
 )
-
-POLICY_PATH = Path("docs/AutoLoanPolicy_Global_2025.md")
-
-POLICY_TOOL_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "additionalProperties": False,
-    "properties": {
-        "section": {
-            "type": "string",
-            "description": "Optional section title or number to retrieve (for example, 'Section 1' or 'Interest Rate Bands').",
-        },
-        "keyword": {
-            "type": "string",
-            "description": "Optional keyword to search across the policy (for example, 'DTI' or 'documentation').",
-        },
-    },
-}
-
-POLICY_TOOL_CODE = """
-from pathlib import Path
-
-POLICY_FILE = Path(policy_path)
-
-
-def _extract_section(policy_text: str, target: str) -> str | None:
-    target_lower = target.lower()
-    capture: list[str] = []
-    recording = False
-    for line in policy_text.splitlines():
-        stripped = line.strip()
-        if stripped.lower().startswith("## section"):
-            if recording and capture:
-                break
-            recording = target_lower in stripped.lower()
-        if recording:
-            capture.append(line)
-    if capture:
-        return "\n".join(capture).strip()
-    return None
-
-
-def _search_keyword(policy_text: str, keyword: str) -> str | None:
-    keyword_lower = keyword.lower()
-    matches = [line for line in policy_text.splitlines() if keyword_lower in line.lower()]
-    if matches:
-        return "\n".join(matches).strip()
-    return None
-
-
-def lookup_auto_loan_policy(section: str | None = None, keyword: str | None = None) -> str:
-    policy_text = POLICY_FILE.read_text(encoding="utf-8")
-    if section:
-        section_text = _extract_section(policy_text, section)
-        if section_text:
-            return section_text
-        return f"No section matching '{section}' was found in the policy."
-    if keyword:
-        keyword_text = _search_keyword(policy_text, keyword)
-        if keyword_text:
-            return keyword_text
-        return f"No policy text referencing '{keyword}' was found."
-    return policy_text
-"""
 
 
 def convert_messages(messages: list[dict[str, Any]]):
@@ -136,112 +67,19 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def _resolve_identifier(
-    *,
-    cli_value: Optional[str],
-    cli_source: str,
-    env_names: tuple[str, ...],
-    field: str,
-) -> tuple[Optional[str], Optional[str], list[str]]:
-    """Resolve and validate workspace identifiers from CLI arguments or the environment."""
-
-    if cli_value:
-        return _validate_guid(cli_value, field, cli_source), cli_source, []
-
-    errors: list[str] = []
-    for name in env_names:
-        value = os.getenv(name)
-        if not value:
-            continue
-        try:
-            return _validate_guid(value, field, name), name, []
-        except SystemExit as exc:
-            # Keep iterating so aliases (for example WATSONX_PROJECT_ID) can be
-            # used when common variable names like PROJECT_ID are populated by
-            # the host environment with unrelated values.
-            errors.append(str(exc))
-            continue
-
-    return None, None, errors
-
-
-def _validate_guid(value: str, field: str, source: str) -> str:
-    """Ensure *value* looks like a UUID before handing it to the watsonx SDK."""
-
-    try:
-        UUID(value)
-    except (TypeError, ValueError) as exc:
-        preview = value if len(value) <= 32 else f"{value[:8]}…{value[-6:]}"
-        hint = ""
-        if _looks_like_jwt(value):
-            hint = (
-                " The value resembles an IAM access token (JWT). PROJECT_ID/SPACE_ID must be "
-                "watsonx workspace GUIDs, while API keys or tokens belong in IBM_API_KEY."
-            )
-        raise SystemExit(
-            f"{field} from {source} must be a valid UUID/GUID, but the provided value "
-            f"('{preview}') is not.{hint}"
-        ) from exc
-    return value
-
-
-def _looks_like_jwt(value: str) -> bool:
-    """Detect whether *value* appears to be a base64url encoded JWT token."""
-
-    parts = value.split(".")
-    if len(parts) != 3:
-        return False
-
-    for chunk in parts[:2]:  # header and payload are base64url encoded JSON
-        padded = chunk + "=" * (-len(chunk) % 4)
-        try:
-            base64.urlsafe_b64decode(padded)
-        except (binascii.Error, ValueError):
-            return False
-    return True
-
-
 def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Workspace:
     """Resolve workspace identifiers from CLI args or environment variables."""
 
-    resolved_project_id, _, project_errors = _resolve_identifier(
-        cli_value=project_id,
-        cli_source="--project-id",
-        env_names=("PROJECT_ID", "WATSONX_PROJECT_ID"),
-        field="project_id",
-    )
-    resolved_space_id, _, space_errors = _resolve_identifier(
-        cli_value=space_id,
-        cli_source="--space-id",
-        env_names=("SPACE_ID", "WATSONX_SPACE_ID"),
-        field="space_id",
-    )
+    env_project_id = project_id or os.getenv("PROJECT_ID") or os.getenv("WATSONX_PROJECT_ID")
+    env_space_id = space_id or os.getenv("SPACE_ID") or os.getenv("WATSONX_SPACE_ID")
 
-    if not resolved_project_id and not resolved_space_id:
-        if project_errors or space_errors:
-            raise SystemExit("\n".join(project_errors + space_errors))
+    if not env_project_id and not env_space_id:
         raise SystemExit(
             "A watsonx project or space ID is required. Provide --project-id/--space-id "
             "or set PROJECT_ID/SPACE_ID (or WATSONX_PROJECT_ID/WATSONX_SPACE_ID)."
         )
 
-    return Workspace(project_id=resolved_project_id, space_id=resolved_space_id)
-
-
-def build_policy_tool() -> CustomToolConfig:
-    if not POLICY_PATH.exists():  # pragma: no cover - guardrail for misconfigured deployments
-        raise SystemExit(f"Expected policy file at {POLICY_PATH} but it was not found.")
-
-    return CustomToolConfig(
-        name="MockBankAutoLoanPolicy",
-        description=(
-            "Look up sections or keywords from the Mock Bank Auto Loan Policy (AutoLoanPolicy_Global_2025) "
-            "to ground lending decisions."
-        ),
-        code=POLICY_TOOL_CODE,
-        schema=POLICY_TOOL_SCHEMA,
-        params={"policy_path": str(POLICY_PATH)},
-    )
+    return Workspace(project_id=env_project_id, space_id=env_space_id)
 
 
 def main() -> None:
@@ -253,14 +91,8 @@ def main() -> None:
 
     workspace = resolve_workspace(args.project_id, args.space_id)
     rag_config = RagToolConfig(vector_index_id=args.vector_index_id)
-    custom_tools = [build_policy_tool()]
 
-    agent_context = AgentContext(
-        credentials=credentials,
-        workspace=workspace,
-        rag=rag_config,
-        custom_tools=custom_tools,
-    )
+    agent_context = AgentContext(credentials=credentials, workspace=workspace, rag=rag_config)
     agent = build_agent(agent_context)
 
     messages = [{"role": "user", "content": args.question}]

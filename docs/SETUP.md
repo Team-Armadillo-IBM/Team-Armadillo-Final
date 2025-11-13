@@ -7,7 +7,6 @@ This runbook describes exactly how to stand up the Team Armadillo agent in a new
 - Access to an **IBM Cloud** account with watsonx.ai enabled.
 - API key with permission to call Granite foundation models and manage the target project/space.
 - Optional: access to the `sample_bank_policy.csv` dataset so you can repeat the demo end-to-end.
-- Optional: review `docs/AutoLoanPolicy_Global_2025.md`, the canonical policy text cited during every auto-loan decision.
 
 ## 2. Create a virtual environment
 ```bash
@@ -43,7 +42,6 @@ PYTHONPATH=src python -m scripts.run_agent "How should I evaluate a mortgage ref
 - Remove `--print-full-response` to show only the final answer.
 - Replace the sample prompt with your own risk evaluation question.
 - Use `--project-id`/`--space-id` when the defaults in `scripts/run_agent.py` do not match your workspace.
-- The CLI automatically mounts `docs/AutoLoanPolicy_Global_2025.md` as a custom tool so the agent can quote the exact policy text.
 
 ## 6. Inspect artifacts
 - **CLI output** provides the narrative response along with credential provenance.

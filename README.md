@@ -24,11 +24,15 @@ Use this repo in two complementary ways:
    python3 -m venv .venv
    source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
    ```
-2. **Install dependencies**:
+2. **Install dependencies** (from the repository root):
    ```bash
    pip install --upgrade pip
    pip install -r requirements.txt
    ```
+   - If you see `Could not open requirements file`, you're probably running the command from another directory. Either `cd` back to the repo root or call the helper script which resolves the path automatically:
+     ```bash
+     ./scripts/install_dependencies.sh
+     ```
 3. **Provide watsonx credentials**:
    ```bash
    export IBM_API_KEY="<your-key>"

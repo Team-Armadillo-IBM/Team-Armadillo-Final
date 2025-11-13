@@ -53,6 +53,21 @@ Use this repo in two complementary ways:
    - Outputs and governance logs are written to `/data` with timestamps.
 5. **Inspect the artifacts** listed below to validate the run and prepare demos.
 
+### Use Jupyter Lab / Notebook workflows
+Jupyter Lab is included in the default requirements so you can replay or extend the notebooks without additional setup.
+
+1. (One time) register the virtual environment as a kernel so the notebooks can import from `src/`:
+   ```bash
+   python -m ipykernel install --user --name team-armadillo --display-name "Team Armadillo"
+   ```
+2. Launch the notebook environment from the repo root. The helper script sets `PYTHONPATH=src` and opens the `notebooks/` folder:
+   ```bash
+   ./scripts/run_jupyter_lab.sh
+   ```
+3. Open any of the archived notebooks to trace experiments or to craft new prompt/agent variations. Because the kernel points at this repo you can import modules such as `agent_lab.prompts` directly.
+
+Use the same kernel when creating new notebooks so they can share utilities and configuration logic with the CLI.
+
 ## Repository layout
 | Path | Description |
 | --- | --- |

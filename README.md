@@ -92,7 +92,7 @@ Log follow-up tasks as GitHub issues so changes remain traceable.
 ## Project Scope
 - Industry: **Banking**
 - Challenge: AI-assisted risk analysis of loan and policy documentation
-- Model: **Granite 13B Instruct**
+- Model: **Granite-3.3-8B-Instruct**
 - Environment: **watsonx.ai Jupyter Notebook**
 
 ## Dependencies

@@ -4,18 +4,84 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 from typing import Any, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
 
 from agent_lab import (
     AgentContext,
+    CustomToolConfig,
     RagToolConfig,
     Workspace,
     build_agent,
     get_bearer_token,
     load_credentials,
 )
+
+POLICY_PATH = Path("docs/AutoLoanPolicy_Global_2025.md")
+
+POLICY_TOOL_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": False,
+    "properties": {
+        "section": {
+            "type": "string",
+            "description": "Optional section title or number to retrieve (for example, 'Section 1' or 'Interest Rate Bands').",
+        },
+        "keyword": {
+            "type": "string",
+            "description": "Optional keyword to search across the policy (for example, 'DTI' or 'documentation').",
+        },
+    },
+}
+
+POLICY_TOOL_CODE = """
+from pathlib import Path
+
+POLICY_FILE = Path(policy_path)
+
+
+def _extract_section(policy_text: str, target: str) -> str | None:
+    target_lower = target.lower()
+    capture: list[str] = []
+    recording = False
+    for line in policy_text.splitlines():
+        stripped = line.strip()
+        if stripped.lower().startswith("## section"):
+            if recording and capture:
+                break
+            recording = target_lower in stripped.lower()
+        if recording:
+            capture.append(line)
+    if capture:
+        return "\n".join(capture).strip()
+    return None
+
+
+def _search_keyword(policy_text: str, keyword: str) -> str | None:
+    keyword_lower = keyword.lower()
+    matches = [line for line in policy_text.splitlines() if keyword_lower in line.lower()]
+    if matches:
+        return "\n".join(matches).strip()
+    return None
+
+
+def lookup_auto_loan_policy(section: str | None = None, keyword: str | None = None) -> str:
+    policy_text = POLICY_FILE.read_text(encoding="utf-8")
+    if section:
+        section_text = _extract_section(policy_text, section)
+        if section_text:
+            return section_text
+        return f"No section matching '{section}' was found in the policy."
+    if keyword:
+        keyword_text = _search_keyword(policy_text, keyword)
+        if keyword_text:
+            return keyword_text
+        return f"No policy text referencing '{keyword}' was found."
+    return policy_text
+"""
 
 
 def convert_messages(messages: list[dict[str, Any]]):
@@ -82,6 +148,22 @@ def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Wor
     return Workspace(project_id=env_project_id, space_id=env_space_id)
 
 
+def build_policy_tool() -> CustomToolConfig:
+    if not POLICY_PATH.exists():  # pragma: no cover - guardrail for misconfigured deployments
+        raise SystemExit(f"Expected policy file at {POLICY_PATH} but it was not found.")
+
+    return CustomToolConfig(
+        name="MockBankAutoLoanPolicy",
+        description=(
+            "Look up sections or keywords from the Mock Bank Auto Loan Policy (AutoLoanPolicy_Global_2025) "
+            "to ground lending decisions."
+        ),
+        code=POLICY_TOOL_CODE,
+        schema=POLICY_TOOL_SCHEMA,
+        params={"policy_path": str(POLICY_PATH)},
+    )
+
+
 def main() -> None:
     args = parse_args()
 
@@ -91,8 +173,14 @@ def main() -> None:
 
     workspace = resolve_workspace(args.project_id, args.space_id)
     rag_config = RagToolConfig(vector_index_id=args.vector_index_id)
+    custom_tools = [build_policy_tool()]
 
-    agent_context = AgentContext(credentials=credentials, workspace=workspace, rag=rag_config)
+    agent_context = AgentContext(
+        credentials=credentials,
+        workspace=workspace,
+        rag=rag_config,
+        custom_tools=custom_tools,
+    )
     agent = build_agent(agent_context)
 
     messages = [{"role": "user", "content": args.question}]

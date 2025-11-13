@@ -1,0 +1,9 @@
+ibm-watsonx-ai
+langchain-ibm
+langchain-core
+langgraph
+numpy
+pandas
+requests
+jsonschema
+pyyaml

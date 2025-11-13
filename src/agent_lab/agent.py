@@ -72,7 +72,7 @@ def build_agent(agent_context: AgentContext):
         chat_model,
         tools=tools,
         checkpointer=memory,
-        state_modifier=agent_context.instructions.instructions,
+        prompt=agent_context.instructions.instructions,
     )
     return agent
 

@@ -39,6 +39,8 @@ Use this repo in two complementary ways:
    ```
    - Only one of `PROJECT_ID` or `SPACE_ID` is required.
    - You can also set `WATSONX_PROJECT_ID` / `WATSONX_SPACE_ID`; the CLI will check those names too.
+   - Workspace IDs are UUID/GUID values. If you see an error mentioning a value like `eyJ…`, you probably pasted an IAM token;
+     move that string to `IBM_API_KEY` and keep only GUIDs in the project/space variables.
    - CLI flags `--project-id` and `--space-id` override environment variables per run.
 4. **Run the agent** from the repo root:
    ```bash

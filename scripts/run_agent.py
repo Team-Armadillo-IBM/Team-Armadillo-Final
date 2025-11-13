@@ -30,7 +30,11 @@ def convert_messages(messages: list[dict[str, Any]]):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Invoke the Loan Risk Assistant agent.")
-    parser.add_argument("question", help="User question to send to the agent.")
+    parser.add_argument(
+        "question",
+        nargs=argparse.REMAINDER,
+        help="User question to send to the agent (no extra quoting required).",
+    )
     parser.add_argument(
         "--vector-index-id",
         default="40824957-150a-4607-a08c-7f8885b0befa",
@@ -51,7 +55,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print the raw agent response payload for debugging.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if not args.question:
+        parser.error("A question or prompt is required.")
+
+    # argparse.REMAINDER returns a list of tokens; join to reconstruct the original
+    # prompt so multi-word/YAML inputs can be passed without shell-escaping.
+    args.question = " ".join(args.question).strip()
+
+    return args
 
 
 def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Workspace:

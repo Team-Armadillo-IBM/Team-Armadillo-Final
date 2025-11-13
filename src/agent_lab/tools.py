@@ -182,8 +182,24 @@ def create_utility_agent_tool(
     return StructuredTool(name=tool_name, description=description, func=run_tool, args_schema=tool_schema)
 
 
-def create_rag_tool(config: RagToolConfig, api_client) -> StructuredTool:
-    params = {"vectorIndexId": config.vector_index_id}
+def _workspace_rag_params(workspace: Workspace | None = None) -> dict[str, str]:
+    params: dict[str, str] = {}
+    if not workspace:
+        return params
+
+    if workspace.project_id:
+        params["projectId"] = workspace.project_id
+    if workspace.space_id:
+        params["spaceId"] = workspace.space_id
+    return params
+
+
+def create_rag_tool(
+    config: RagToolConfig,
+    api_client,
+    workspace: Workspace | None = None,
+) -> StructuredTool:
+    params = {"vectorIndexId": config.vector_index_id, **_workspace_rag_params(workspace)}
     return create_utility_agent_tool(
         "RAGQuery",
         params,
@@ -231,7 +247,7 @@ def assemble_toolkit(
     tools: List[StructuredTool] = []
 
     if rag_config:
-        tools.append(create_rag_tool(rag_config, api_client))
+        tools.append(create_rag_tool(rag_config, api_client, workspace))
 
     if include_python:
         tools.append(create_python_interpreter_tool(context, workspace))

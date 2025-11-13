@@ -140,29 +140,27 @@ def _resolve_identifier(
     cli_source: str,
     env_names: tuple[str, ...],
     field: str,
-) -> tuple[Optional[str], Optional[str]]:
+) -> tuple[Optional[str], Optional[str], list[str]]:
     """Resolve and validate workspace identifiers from CLI arguments or the environment."""
 
     if cli_value:
-        return _validate_guid(cli_value, field, cli_source), cli_source
+        return _validate_guid(cli_value, field, cli_source), cli_source, []
 
-    last_error: Optional[SystemExit] = None
+    errors: list[str] = []
     for name in env_names:
         value = os.getenv(name)
         if not value:
             continue
         try:
-            return _validate_guid(value, field, name), name
+            return _validate_guid(value, field, name), name, []
         except SystemExit as exc:
             # Keep iterating so aliases (for example WATSONX_PROJECT_ID) can be
             # used when common variable names like PROJECT_ID are populated by
             # the host environment with unrelated values.
-            last_error = exc
+            errors.append(str(exc))
             continue
 
-    if last_error:
-        raise last_error
-    return None, None
+    return None, None, errors
 
 
 def _validate_guid(value: str, field: str, source: str) -> str:
@@ -182,13 +180,13 @@ def _validate_guid(value: str, field: str, source: str) -> str:
 def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Workspace:
     """Resolve workspace identifiers from CLI args or environment variables."""
 
-    resolved_project_id, _ = _resolve_identifier(
+    resolved_project_id, _, project_errors = _resolve_identifier(
         cli_value=project_id,
         cli_source="--project-id",
         env_names=("PROJECT_ID", "WATSONX_PROJECT_ID"),
         field="project_id",
     )
-    resolved_space_id, _ = _resolve_identifier(
+    resolved_space_id, _, space_errors = _resolve_identifier(
         cli_value=space_id,
         cli_source="--space-id",
         env_names=("SPACE_ID", "WATSONX_SPACE_ID"),
@@ -196,6 +194,8 @@ def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Wor
     )
 
     if not resolved_project_id and not resolved_space_id:
+        if project_errors or space_errors:
+            raise SystemExit("\n".join(project_errors + space_errors))
         raise SystemExit(
             "A watsonx project or space ID is required. Provide --project-id/--space-id "
             "or set PROJECT_ID/SPACE_ID (or WATSONX_PROJECT_ID/WATSONX_SPACE_ID)."

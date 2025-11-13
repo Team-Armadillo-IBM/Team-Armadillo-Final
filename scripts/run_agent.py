@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import json
 import os
 from pathlib import Path
@@ -170,11 +172,33 @@ def _validate_guid(value: str, field: str, source: str) -> str:
         UUID(value)
     except (TypeError, ValueError) as exc:
         preview = value if len(value) <= 32 else f"{value[:8]}…{value[-6:]}"
+        hint = ""
+        if _looks_like_jwt(value):
+            hint = (
+                " The value resembles an IAM access token (JWT). PROJECT_ID/SPACE_ID must be "
+                "watsonx workspace GUIDs, while API keys or tokens belong in IBM_API_KEY."
+            )
         raise SystemExit(
             f"{field} from {source} must be a valid UUID/GUID, but the provided value "
-            f"('{preview}') is not."
+            f"('{preview}') is not.{hint}"
         ) from exc
     return value
+
+
+def _looks_like_jwt(value: str) -> bool:
+    """Detect whether *value* appears to be a base64url encoded JWT token."""
+
+    parts = value.split(".")
+    if len(parts) != 3:
+        return False
+
+    for chunk in parts[:2]:  # header and payload are base64url encoded JSON
+        padded = chunk + "=" * (-len(chunk) % 4)
+        try:
+            base64.urlsafe_b64decode(padded)
+        except (binascii.Error, ValueError):
+            return False
+    return True
 
 
 def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Workspace:

@@ -55,5 +55,16 @@ PYTHONPATH=src python -m scripts.run_agent "How should I evaluate a mortgage ref
 | `404 Not Found` from Granite endpoints | Ensure the `vector_index_id`, `project_id`, and `space_id` match your watsonx deployment. |
 | Empty responses or timeouts | Rerun with `--print-full-response` to capture trace IDs and open a support ticket with IBM if the issue persists. |
 
+## 8. Optional: launch Jupyter Lab
+The notebooks in `notebooks/` mirror the experimentation history from watsonx. Launch Jupyter Lab to replay them or build new workflows:
+
+```bash
+python -m ipykernel install --user --name team-armadillo --display-name "Team Armadillo"
+./scripts/run_jupyter_lab.sh
+```
+
+- The first command registers your current virtual environment as a selectable kernel.
+- The helper script sets `PYTHONPATH=src` before calling `jupyter lab`, so imports like `from agent_lab.graph import build_agent` work inside notebooks without manual tweaks.
+
 ---
 Maintainers can extend this runbook with internal deployment steps (for example, containerization) without modifying the public README.

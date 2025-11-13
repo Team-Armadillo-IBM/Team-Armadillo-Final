@@ -19,7 +19,11 @@ From the repository root run:
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
+# or ./scripts/install_dependencies.sh
 ```
+
+- If the `pip install -r requirements.txt` command fails with `ERROR: Could not open requirements file`, you are likely executing it from another directory.
+- The helper script resolves the repository root automatically and can be invoked from any path.
 
 ## 4. Provide credentials
 The CLI relies on environment variables. Add them to your shell or `.env` file before running the agent.

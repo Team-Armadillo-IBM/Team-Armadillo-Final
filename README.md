@@ -28,7 +28,10 @@ Use this repo in two complementary ways:
    ```bash
    pip install --upgrade pip
    pip install -r requirements.txt
+   # or run the helper from anywhere: ./scripts/install_dependencies.sh
    ```
+   - Run the commands from the repository root so `requirements.txt` is on the path.
+   - If you encounter `ERROR: Could not open requirements file`, use the helper script which automatically resolves the correct path.
 3. **Provide watsonx credentials**:
    ```bash
    export IBM_API_KEY="<your-key>"

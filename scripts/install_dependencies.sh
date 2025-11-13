@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REQ_FILE="${REPO_ROOT}/requirements.txt"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+if [[ ! -f "${REQ_FILE}" ]]; then
+  echo "Error: requirements.txt not found at ${REQ_FILE}" >&2
+  exit 1
+fi
+
+cd "${REPO_ROOT}"
+"${PYTHON_BIN}" -m pip install --upgrade pip
+"${PYTHON_BIN}" -m pip install -r "${REQ_FILE}"

@@ -20,7 +20,7 @@ Use this repo in two complementary ways:
 ## Hands-on setup (technical)
 1. **Create a virtual environment** (Python 3.11+):
    ```bash
-   python -m venv .venv
+   python3 -m venv .venv
    source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
    ```
 2. **Install dependencies**:

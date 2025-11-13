@@ -1,2 +1,11 @@
 __pycache__/
 *.pyc
+.venv/
+.env
+.env.*
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+data/generated/
+*.log

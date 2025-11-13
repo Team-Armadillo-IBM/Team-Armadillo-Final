@@ -93,7 +93,10 @@ def create_python_interpreter_tool(context: RuntimeContext, workspace: Workspace
         redirected_output = StringIO("")
         result: PythonExecutionResult | None = None
         try:
-            full_code = "init_imports()\n\n" + code
+            # Build the bootstrap prefix separately so that the generated code never
+            # ends up with a dangling quote when cells are copied into notebooks.
+            bootstrap_prefix = "init_imports()\n\n"
+            full_code = f"{bootstrap_prefix}{code}"
             tree = ast.parse(full_code, mode="exec")
             compiled_code = compile(tree, "agent_code", "exec")
             namespace = {"init_imports": init_imports, "PythonExecutionResult": PythonExecutionResult}

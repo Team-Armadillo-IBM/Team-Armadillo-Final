@@ -64,6 +64,8 @@ Jupyter Lab is included in the default requirements so you can replay or extend 
    ```bash
    ./scripts/run_jupyter_lab.sh
    ```
+   > Troubleshooting tip: if you see `-bash: ./scripts/run_jupyter_lab.sh: No such file or directory`, confirm that your shell's current working directory is the repository root (the folder containing `README.md`). Running `pwd` should end with `/Team-Armadillo-Final`. You can also invoke the helper explicitly with `bash scripts/run_jupyter_lab.sh` to avoid PATH issues on shells that restrict executable lookups.
+
 3. Open any of the archived notebooks to trace experiments or to craft new prompt/agent variations. Because the kernel points at this repo you can import modules such as `agent_lab.prompts` directly.
 
 Use the same kernel when creating new notebooks so they can share utilities and configuration logic with the CLI.

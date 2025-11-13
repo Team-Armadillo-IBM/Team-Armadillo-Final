@@ -42,11 +42,11 @@ Use this repo in two complementary ways:
 4. **Run the agent** from the repo root:
    ```bash
    PYTHONPATH=src python -m scripts.run_agent "high_risk:
-  applicant_id: 1001
-  risk_score: 0.85
-  credit_score: 580
-  debt_to_income: 0.62
-  explanation: "Low credit score, high DTI"" \
+   applicant_id: 1001
+   risk_score: 0.85
+   credit_score: 580
+   debt_to_income: 0.62
+   explanation: "Low credit score, high DTI"" \
      --vector-index-id 40824957-150a-4607-a08c-7f8885b0befa
    ```
    - Add `--print-full-response` for verbose JSON output.

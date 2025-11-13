@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any, Optional
+from uuid import UUID
 
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -133,19 +134,57 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def _first_env_value(*names: str) -> tuple[Optional[str], Optional[str]]:
+    """Return the first set environment variable from *names* and its source name."""
+
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value, name
+    return None, None
+
+
+def _validate_guid(value: str, field: str, source: str) -> str:
+    """Ensure *value* looks like a UUID before handing it to the watsonx SDK."""
+
+    try:
+        UUID(value)
+    except (TypeError, ValueError) as exc:
+        preview = value if len(value) <= 32 else f"{value[:8]}…{value[-6:]}"
+        raise SystemExit(
+            f"{field} from {source} must be a valid UUID/GUID, but the provided value "
+            f"('{preview}') is not."
+        ) from exc
+    return value
+
+
 def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Workspace:
     """Resolve workspace identifiers from CLI args or environment variables."""
 
-    env_project_id = project_id or os.getenv("PROJECT_ID") or os.getenv("WATSONX_PROJECT_ID")
-    env_space_id = space_id or os.getenv("SPACE_ID") or os.getenv("WATSONX_SPACE_ID")
+    project_source = "--project-id"
+    space_source = "--space-id"
 
-    if not env_project_id and not env_space_id:
+    env_project_id, env_project_source = _first_env_value("PROJECT_ID", "WATSONX_PROJECT_ID")
+    env_space_id, env_space_source = _first_env_value("SPACE_ID", "WATSONX_SPACE_ID")
+
+    resolved_project_id = project_id or env_project_id
+    project_source = project_source if project_id else env_project_source
+
+    resolved_space_id = space_id or env_space_id
+    space_source = space_source if space_id else env_space_source
+
+    if not resolved_project_id and not resolved_space_id:
         raise SystemExit(
             "A watsonx project or space ID is required. Provide --project-id/--space-id "
             "or set PROJECT_ID/SPACE_ID (or WATSONX_PROJECT_ID/WATSONX_SPACE_ID)."
         )
 
-    return Workspace(project_id=env_project_id, space_id=env_space_id)
+    if resolved_project_id:
+        resolved_project_id = _validate_guid(resolved_project_id, "project_id", project_source or "environment")
+    if resolved_space_id:
+        resolved_space_id = _validate_guid(resolved_space_id, "space_id", space_source or "environment")
+
+    return Workspace(project_id=resolved_project_id, space_id=resolved_space_id)
 
 
 def build_policy_tool() -> CustomToolConfig:

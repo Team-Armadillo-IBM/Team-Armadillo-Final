@@ -1,4 +1,5 @@
 ibm-watsonx-ai
+ipykernal
 langchain-ibm
 langchain-core
 langgraph

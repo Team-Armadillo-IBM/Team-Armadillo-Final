@@ -28,8 +28,8 @@ The CLI relies on environment variables. Add them to your shell or `.env` file b
 | --- | --- | --- |
 | `IBM_API_KEY` | ✅ | API key that is exchanged for a watsonx bearer token. |
 | `WATSONX_URL` | ⛔ (defaults to `https://us-south.ml.cloud.ibm.com`) | Override when calling a different region. |
-| `PROJECT_ID` | ⚠️ | Required when running in a project context. |
-| `SPACE_ID` | ⚠️ | Required when targeting a deployment space. |
+| `PROJECT_ID` | ⚠️ | Required when running in a project context (aliases: `WATSONX_PROJECT_ID`). |
+| `SPACE_ID` | ⚠️ | Required when targeting a deployment space (aliases: `WATSONX_SPACE_ID`). |
 
 Only one of `PROJECT_ID` or `SPACE_ID` is needed. The CLI flags `--project-id` and `--space-id` override the environment variables during ad-hoc runs.
 

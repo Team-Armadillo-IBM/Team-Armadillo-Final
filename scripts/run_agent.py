@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from typing import Any
+import os
+from typing import Any, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -53,6 +54,21 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def resolve_workspace(project_id: Optional[str], space_id: Optional[str]) -> Workspace:
+    """Resolve workspace identifiers from CLI args or environment variables."""
+
+    env_project_id = project_id or os.getenv("PROJECT_ID") or os.getenv("WATSONX_PROJECT_ID")
+    env_space_id = space_id or os.getenv("SPACE_ID") or os.getenv("WATSONX_SPACE_ID")
+
+    if not env_project_id and not env_space_id:
+        raise SystemExit(
+            "A watsonx project or space ID is required. Provide --project-id/--space-id "
+            "or set PROJECT_ID/SPACE_ID (or WATSONX_PROJECT_ID/WATSONX_SPACE_ID)."
+        )
+
+    return Workspace(project_id=env_project_id, space_id=env_space_id)
+
+
 def main() -> None:
     args = parse_args()
 
@@ -60,7 +76,7 @@ def main() -> None:
     # Lazily fetch bearer token for external usage when requested.
     bearer_token = get_bearer_token(credentials)
 
-    workspace = Workspace(project_id=args.project_id, space_id=args.space_id)
+    workspace = resolve_workspace(args.project_id, args.space_id)
     rag_config = RagToolConfig(vector_index_id=args.vector_index_id)
 
     agent_context = AgentContext(credentials=credentials, workspace=workspace, rag=rag_config)

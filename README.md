@@ -36,6 +36,7 @@ Use this repo in two complementary ways:
    export SPACE_ID="<space-or-empty>"
    ```
    - Only one of `PROJECT_ID` or `SPACE_ID` is required.
+   - You can also set `WATSONX_PROJECT_ID` / `WATSONX_SPACE_ID`; the CLI will check those names too.
    - CLI flags `--project-id` and `--space-id` override environment variables per run.
 4. **Run the agent** from the repo root:
    ```bash
